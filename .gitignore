@@ -1,0 +1,6 @@
+.git/
+.vscode/
+/**/.DS_Store
+/**/__pycache__
+/**/.pytest_cache
+introduction copy.md
