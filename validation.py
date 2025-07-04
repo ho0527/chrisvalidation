@@ -83,6 +83,9 @@ def validate(data,rule,error,checkall=False):
 				# 預留給 future 的處理
 				if not customrules[rulename](value,rulevaluelist):
 					return seterror(testkey,rulename)
+			elif rulename=="accepted":
+				if value not in ["yes","on",1,"1",True,"true"]:
+					return seterror(testkey,rulename)
 			elif rulename=="array":
 				if not isinstance(value,list):
 					return seterror(testkey,rulename)

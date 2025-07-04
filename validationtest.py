@@ -580,5 +580,57 @@ class TestValidation(unittest.TestCase):
 		}
 		result=validate(data,rule,error)
 		self.assertTrue(result["success"])
+
+	def test035acceptedsuccess(self):
+		data={
+			"name": "1"
+		}
+		rule={
+			"name": "required|accepted"
+		}
+		error={
+			"accepted": "ERROR_request_datatype_error"
+		}
+		result=validate(data,rule,error)
+		self.assertTrue(result["success"])
+
+	def test036acceptedsuccess2(self):
+		data={
+			"name": True
+		}
+		rule={
+			"name": "required|accepted"
+		}
+		error={
+			"accepted": "ERROR_request_datatype_error"
+		}
+		result=validate(data,rule,error)
+		self.assertTrue(result["success"])
+
+	def test037acceptederror(self):
+		data={
+			"name": "false"
+		}
+		rule={
+			"name": "required|accepted"
+		}
+		error={
+			"accepted": "ERROR_request_datatype_error"
+		}
+		result=validate(data,rule,error)
+		self.assertFalse(result["success"])
+
+	def test038acceptederror2(self):
+		data={
+			"name": "nonono"
+		}
+		rule={
+			"name": "required|accepted"
+		}
+		error={
+			"accepted": "ERROR_request_datatype_error"
+		}
+		result=validate(data,rule,error)
+		self.assertFalse(result["success"])
 if __name__=="__main__":
 	unittest.main()

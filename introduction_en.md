@@ -9,6 +9,8 @@
     - [1-3: File Path \& Structure](#1-3-file-path--structure)
     - [1-4: First Test API](#1-4-first-test-api)
   - [2. Available Validation Rules](#2-available-validation-rules)
+    - [accepted](#accepted)
+      - [實作方式](#實作方式)
     - [array](#array)
       - [Implementation](#implementation)
     - [boolean|bool](#booleanbool)
@@ -137,6 +139,7 @@ def signin(request):
 
 Here is the list of all available validation rules:
 
+[accepted](#accepted)
 [array](#array)
 [boolean](#booleanbool)
 [max](#maxvalue)
@@ -156,12 +159,23 @@ Here is the list of all available validation rules:
 
 <div style="page-break-after: always;"></div>
 
+### accepted
+The field under validation must be "yes", "on", 1, "1", true, or "true". This is useful for validating "Terms of Service" acceptance or similar fields.
+
+#### 實作方式
+Check according to the given rule.
+
+程式碼:
+```python
+if value not in ["yes","on",1,"1",True,"true"]:
+    return seterror(testkey,rulename)
+```
+
 ### array
 
 The field being validated must be an array (i.e., must be of `list` type).
 
 #### Implementation
-
 Check according to the given rule.
 
 ```python
@@ -176,7 +190,6 @@ if not isinstance(value,list):
 The field must be able to convert to a boolean. Accepted values: `true`, `false`, `1`, `0`, `"1"`, `"0"`.
 
 #### Implementation
-
 Check according to the given rule.
 
 ```python

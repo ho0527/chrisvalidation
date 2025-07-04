@@ -9,38 +9,40 @@
     - [1-3: 定義檔案路徑及架構](#1-3-定義檔案路徑及架構)
     - [1-4: 第一支測試api](#1-4-第一支測試api)
   - [二、可用的驗證規則](#二可用的驗證規則)
-    - [array(陣列)](#array陣列)
+    - [accepted(接受)](#accepted接受)
       - [實作方式](#實作方式)
-    - [boolean|bool(布林值)](#booleanbool布林值)
+    - [array(陣列)](#array陣列)
       - [實作方式](#實作方式-1)
-    - [in(包含):*valuelist*](#in包含valuelist)
+    - [boolean|bool(布林值)](#booleanbool布林值)
       - [實作方式](#實作方式-2)
-    - [integer|int(整數)](#integerint整數)
+    - [in(包含):*valuelist*](#in包含valuelist)
       - [實作方式](#實作方式-3)
-    - [ip](#ip)
+    - [integer|int(整數)](#integerint整數)
       - [實作方式](#實作方式-4)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [實作方式](#實作方式-5)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [實作方式](#實作方式-6)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [實作方式](#實作方式-7)
-    - [max(小於):*value{int}*](#max小於valueint)
+    - [json](#json)
       - [實作方式](#實作方式-8)
-    - [min(大於):*value{int}*](#min大於valueint)
+    - [max(小於):*value{int}*](#max小於valueint)
       - [實作方式](#實作方式-9)
-    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
+    - [min(大於):*value{int}*](#min大於valueint)
       - [實作方式](#實作方式-10)
-    - [nullable(可空)](#nullable可空)
+    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
       - [實作方式](#實作方式-11)
-    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
+    - [nullable(可空)](#nullable可空)
       - [實作方式](#實作方式-12)
-    - [required(必填的)](#required必填的)
+    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
       - [實作方式](#實作方式-13)
-    - [size(大小):*value{int}*](#size大小valueint)
+    - [required(必填的)](#required必填的)
       - [實作方式](#實作方式-14)
-    - [string|str(字串)](#stringstr字串)
+    - [size(大小):*value{int}*](#size大小valueint)
       - [實作方式](#實作方式-15)
+    - [string|str(字串)](#stringstr字串)
+      - [實作方式](#實作方式-16)
   - [十二、註解及參見](#十二註解及參見)
     - [註解](#註解)
     - [參見](#參見)
@@ -135,6 +137,7 @@ def signin(request):
 
 以下是所有可用驗證規則及其功能的清單：
 
+[accepted(接受)](#accepted接受)
 [array(陣列)](#array陣列)
 [boolean(布林值)](#booleanbool布林值)
 [max(小於)](#max小於value)
@@ -151,6 +154,18 @@ def signin(request):
 [required(必需的)](#required必填的)
 [size(大小)](#size大小value)
 [string(字串)](#stringstr字串)
+
+### accepted(接受)
+驗證的欄位必須是"yes"、"on"、1、"1"、true或"true"。這對於驗證「服務條款」接受或類似欄位很有用。
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+if value not in ["yes","on",1,"1",True,"true"]:
+    return seterror(testkey,rulename)
+```
 
 ### array(陣列)
 驗證下的欄位必須是array。也就是需符合List型別。
