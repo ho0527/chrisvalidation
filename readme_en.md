@@ -67,7 +67,7 @@ After downloading, you can use it with either `from validation import *` or `fro
 
 ## 5. Feature List
 
-[See documentation](introduction.md)
+[See documentation](introduction_en.md)
 
 <div style="page-break-after: always;"></div>
 
