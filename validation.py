@@ -86,6 +86,15 @@ def validate(data,rule,error,checkall=False):
 			elif rulename=="accepted":
 				if value not in ["yes","on",1,"1",True,"true"]:
 					return seterror(testkey,rulename)
+			elif rulename=="accepted_if":
+				if len(rulevaluelist)!=2:
+					return seterror(testkey,rulename)
+				otherkey=rulevaluelist[0]
+				othervalue=rulevaluelist[1]
+				othertarget=getvaluebypath(data,otherkey)
+				if othertarget==othervalue:
+					if value not in ["yes","on",1,"1",True,"true"]:
+						return seterror(testkey,rulename)
 			elif rulename=="array":
 				if not isinstance(value,list):
 					return seterror(testkey,rulename)
@@ -204,7 +213,7 @@ def validate(data,rule,error,checkall=False):
 				size=checksize(value)
 				if size==False or size!=int(rulevaluelist[0]):
 					return seterror(testkey,rulename)
-			elif rulename in ["required", "nullable"]:
+			elif rulename in ["bail","required", "nullable"]:
 				pass  # 已經處理過
 			elif rulename in customrules:
 				if not customrules[rulename](value,rulevaluelist):
@@ -231,7 +240,10 @@ def validate(data,rule,error,checkall=False):
 
 			# nullable 欄位值為空，直接跳過所有驗證
 			if not (("nullable" in testrulelist) and (value==None)):
+				bailstop=False
 				for testrule in testrulelist:
+					if bailstop:
+						break
 					returndata=test(fullkey,testrule,value)
 
 					if not returndata["check"]:
@@ -242,6 +254,8 @@ def validate(data,rule,error,checkall=False):
 							firsterror=returndata["errordata"].replace(":key",f"'{fullkey.split(".")[-1]}'")
 						if not checkall:
 							break
+						if "bail" in testrulelist:
+							bailstop=True
 
 	# 回傳結果
 	if check:

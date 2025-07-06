@@ -1,8 +1,8 @@
 # chrisvalidation
 
-## 目錄
+## Index
 - [chrisvalidation](#chrisvalidation)
-  - [目錄](#目錄)
+  - [Index](#index)
   - [1. Introduction \& Usage](#1-introduction--usage)
     - [1-1: Overview](#1-1-overview)
     - [1-2: Quick Start](#1-2-quick-start)
@@ -10,41 +10,45 @@
     - [1-4: First Test API](#1-4-first-test-api)
   - [2. Available Validation Rules](#2-available-validation-rules)
     - [accepted](#accepted)
-      - [實作方式](#實作方式)
-    - [array](#array)
       - [Implementation](#implementation)
-    - [boolean|bool](#booleanbool)
+    - [accepted\_if:*anotherfield,value,...*](#accepted_ifanotherfieldvalue)
       - [Implementation](#implementation-1)
-    - [in:*valuelist*](#invaluelist)
+    - [array](#array)
       - [Implementation](#implementation-2)
+    - [bail](#bail)
+      - [Implementation](#implementation-3)
+    - [boolean|bool](#booleanbool)
+      - [Implementation](#implementation-4)
+    - [in:*valuelist*](#invaluelist)
+      - [Implementation](#implementation-5)
     - [in\_array:anotherfield.\*](#in_arrayanotherfield)
     - [integer|int](#integerint)
-      - [Implementation](#implementation-3)
-    - [ip](#ip)
-      - [Implementation](#implementation-4)
-    - [ipv4](#ipv4)
-      - [Implementation](#implementation-5)
-    - [ipv6](#ipv6)
       - [Implementation](#implementation-6)
-    - [json](#json)
+    - [ip](#ip)
       - [Implementation](#implementation-7)
-    - [max:*value{int}*](#maxvalueint)
+    - [ipv4](#ipv4)
       - [Implementation](#implementation-8)
-    - [min:*value{int}*](#minvalueint)
+    - [ipv6](#ipv6)
       - [Implementation](#implementation-9)
-    - [not\_regex:*value{regex}*](#not_regexvalueregex)
+    - [json](#json)
       - [Implementation](#implementation-10)
-    - [nullable](#nullable)
+    - [max:*value{int}*](#maxvalueint)
       - [Implementation](#implementation-11)
-    - [regex:*value{regex}*](#regexvalueregex)
+    - [min:*value{int}*](#minvalueint)
       - [Implementation](#implementation-12)
-    - [required](#required)
+    - [not\_regex:*value{regex}*](#not_regexvalueregex)
       - [Implementation](#implementation-13)
-    - [size:*value{int}*](#sizevalueint)
+    - [nullable](#nullable)
       - [Implementation](#implementation-14)
+    - [regex:*value{regex}*](#regexvalueregex)
+      - [Implementation](#implementation-15)
+    - [required](#required)
+      - [Implementation](#implementation-16)
+    - [size:*value{int}*](#sizevalueint)
+      - [Implementation](#implementation-17)
     - [starts\_with:foo,bar,...](#starts_withfoobar)
     - [string|str](#stringstr)
-      - [Implementation](#implementation-15)
+      - [Implementation](#implementation-18)
   - [12. Notes and References](#12-notes-and-references)
     - [Notes](#notes)
     - [References](#references)
@@ -140,7 +144,9 @@ def signin(request):
 Here is the list of all available validation rules:
 
 [accepted](#accepted)
+[accepted_if](#accepted_ifanotherfieldvalue)
 [array](#array)
+[bail](#bail)
 [boolean](#booleanbool)
 [max](#maxvalue)
 [in](#invaluelist)
@@ -162,14 +168,35 @@ Here is the list of all available validation rules:
 ### accepted
 The field under validation must be "yes", "on", 1, "1", true, or "true". This is useful for validating "Terms of Service" acceptance or similar fields.
 
-#### 實作方式
+#### Implementation
 Check according to the given rule.
 
-程式碼:
+code:
 ```python
 if value not in ["yes","on",1,"1",True,"true"]:
     return seterror(testkey,rulename)
 ```
+
+---
+
+### accepted_if:*anotherfield,value,...*
+The field under validation must be "yes", "on", 1, "1", true, or "true" if another field under validation is equal to a specified value. This is useful for validating "Terms of Service" acceptance or similar fields.
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+if not isinstance(rulevalue,list) or len(rulevalue)!=2:
+    return seterror(testkey,rulename)
+otherkey=rulevalue[0]
+othervalue=rulevalue[1]
+if otherkey in datadict and datadict[otherkey]==othervalue:
+    if value not in ["yes","on",1,"1",True,"true"]:
+        return seterror(testkey,rulename)
+```
+
+---
 
 ### array
 
@@ -178,12 +205,57 @@ The field being validated must be an array (i.e., must be of `list` type).
 #### Implementation
 Check according to the given rule.
 
+code:
 ```python
 if not isinstance(value,list):
     return seterror(testkey,rulename)
 ```
 
 ---
+
+### bail
+Stop running validation rules for the field after the first validation failure.
+
+while the bail rule only stops validating a specific field when a validation failure occurs, you can use the fourth parameter **checkall=True** in the function to stop validating all attributes once a single validation failure happens.
+
+
+example:
+```py
+validate(data={
+    "key": 123
+},rule={
+    "key": "bail|required|string|min:2"
+},error={
+    "bail": "ERROR_bail",
+    "required": "ERROR_required",
+    "string": "ERROR_type_string",
+    "min": "ERROR_min_length"
+},checkall=True)
+```
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+bailstop=False
+for testrule in testrulelist:
+    if bailstop:
+        break
+
+    returndata=test(fullkey,testrule,value)
+
+    if not returndata["check"]:
+        check=False
+        errordata[fullkey]={}
+        errordata[fullkey][returndata["rulename"]]=returndata["errordata"].replace(":key",f"'{fullkey.split(".")[-1]}'")
+        if not firsterror:
+            firsterror=returndata["errordata"].replace(":key",f"'{fullkey.split(".")[-1]}'")
+        if not checkall:
+            break
+        if "bail" in testrulelist:
+            bailstop=True
+```
 
 ### boolean|bool
 
@@ -192,6 +264,7 @@ The field must be able to convert to a boolean. Accepted values: `true`, `false`
 #### Implementation
 Check according to the given rule.
 
+code:
 ```python
 if not isinstance(value,bool) and value not in [0,1,"0","1"]:
     return seterror(testkey,rulename)
@@ -207,6 +280,7 @@ If the value is an array, every item in the array must exist in the given list.
 
 #### Implementation
 
+code:
 ```python
 allowed=rulevalue.split(",")
 if isinstance(value,list):
@@ -235,6 +309,7 @@ For numeric checks, combine with the `numeric` rule.
 
 #### Implementation
 
+code:
 ```python
 if not isinstance(value,int) and not isinstance(value,float):
     return seterror(testkey,rulename)
@@ -248,6 +323,7 @@ The field must be a valid IP address.
 
 #### Implementation
 
+code:
 ```python
 try:
     ipaddress.ip_address(value)
@@ -263,6 +339,7 @@ The field must be a valid IPv4 address.
 
 #### Implementation
 
+code:
 ```python
 try:
     if not isinstance(ipaddress.ip_address(value), ipaddress.IPv4Address):
@@ -279,6 +356,7 @@ The field must be a valid IPv6 address.
 
 #### Implementation
 
+code:
 ```python
 try:
     if not isinstance(ipaddress.ip_address(value), ipaddress.IPv6Address):
@@ -295,6 +373,7 @@ The field must be JSON (i.e., a dictionary).
 
 #### Implementation
 
+code:
 ```python
 if not isinstance(value,dict):
     return seterror(testkey,rulename)
@@ -309,6 +388,7 @@ For strings, numbers, arrays, and files, this is evaluated using the `checksize`
 
 #### Implementation
 
+code:
 ```python
 size=checksize(value)
 try:
@@ -327,6 +407,7 @@ Applies to strings, numbers, arrays, and files, using `checksize`.
 
 #### Implementation
 
+code:
 ```python
 size=checksize(value)
 try:
@@ -346,6 +427,7 @@ When using `regex` or `not_regex` with patterns containing `|`, use a rule array
 
 #### Implementation
 
+code:
 ```python
 if type(value)!=str:
     return seterror(testkey,rulename)
@@ -384,6 +466,7 @@ The field may be `null`.
 
 #### Implementation
 
+code:
 ```python
 if not (("nullable" in testrulelist) and (value==None)):
     # Normal validation rules here
@@ -400,6 +483,7 @@ Use array format if the regex contains `|`.
 
 #### Implementation
 
+code:
 ```python
 if type(value)!=str:
     return seterror(testkey,rulename)
@@ -443,6 +527,7 @@ The field must exist in the input and cannot be empty. A field is considered emp
 
 #### Implementation
 
+code:
 ```python
 if value is None or value=="" or value==[] or value=={}:
     return seterror(testkey,rulename)
@@ -461,6 +546,7 @@ The field must match the given size.
 
 Examples:
 
+code:
 ```python
 "title": "size:12"      # String length = 12
 "seats": "integer|size:10"  # Number = 10
@@ -470,6 +556,7 @@ Examples:
 
 #### Implementation
 
+code:
 ```python
 def checksize(value):
     if isinstance(value,str):
@@ -506,6 +593,7 @@ To allow `null`, use the `nullable` rule as well.
 
 #### Implementation
 
+code:
 ```python
 if not isinstance(value,str):
     return seterror(testkey,rulename)
@@ -523,4 +611,4 @@ this note is write by chatgpt, maybe will have some mistake.
 
 ### References
 
-*20250704 v001000001*
+*20250706 v001000002*

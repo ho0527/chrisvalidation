@@ -11,38 +11,42 @@
   - [二、可用的驗證規則](#二可用的驗證規則)
     - [accepted(接受)](#accepted接受)
       - [實作方式](#實作方式)
-    - [array(陣列)](#array陣列)
+    - [accepted\_if(如果...接受):*filed，value，...*](#accepted_if如果接受filedvalue)
       - [實作方式](#實作方式-1)
-    - [boolean|bool(布林值)](#booleanbool布林值)
+    - [array(陣列)](#array陣列)
       - [實作方式](#實作方式-2)
-    - [in(包含):*valuelist*](#in包含valuelist)
+    - [bail(停止)](#bail停止)
       - [實作方式](#實作方式-3)
-    - [integer|int(整數)](#integerint整數)
+    - [boolean|bool(布林值)](#booleanbool布林值)
       - [實作方式](#實作方式-4)
-    - [ip](#ip)
+    - [in(包含):*valuelist*](#in包含valuelist)
       - [實作方式](#實作方式-5)
-    - [ipv4](#ipv4)
+    - [integer|int(整數)](#integerint整數)
       - [實作方式](#實作方式-6)
-    - [ipv6](#ipv6)
+    - [ip](#ip)
       - [實作方式](#實作方式-7)
-    - [json](#json)
+    - [ipv4](#ipv4)
       - [實作方式](#實作方式-8)
-    - [max(小於):*value{int}*](#max小於valueint)
+    - [ipv6](#ipv6)
       - [實作方式](#實作方式-9)
-    - [min(大於):*value{int}*](#min大於valueint)
+    - [json](#json)
       - [實作方式](#實作方式-10)
-    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
+    - [max(小於):*value{int}*](#max小於valueint)
       - [實作方式](#實作方式-11)
-    - [nullable(可空)](#nullable可空)
+    - [min(大於):*value{int}*](#min大於valueint)
       - [實作方式](#實作方式-12)
-    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
+    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
       - [實作方式](#實作方式-13)
-    - [required(必填的)](#required必填的)
+    - [nullable(可空)](#nullable可空)
       - [實作方式](#實作方式-14)
-    - [size(大小):*value{int}*](#size大小valueint)
+    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
       - [實作方式](#實作方式-15)
-    - [string|str(字串)](#stringstr字串)
+    - [required(必填的)](#required必填的)
       - [實作方式](#實作方式-16)
+    - [size(大小):*value{int}*](#size大小valueint)
+      - [實作方式](#實作方式-17)
+    - [string|str(字串)](#stringstr字串)
+      - [實作方式](#實作方式-18)
   - [十二、註解及參見](#十二註解及參見)
     - [註解](#註解)
     - [參見](#參見)
@@ -138,7 +142,9 @@ def signin(request):
 以下是所有可用驗證規則及其功能的清單：
 
 [accepted(接受)](#accepted接受)
+[accepted_if(如果...接受)](#accepted_if如果接受filedvalue)
 [array(陣列)](#array陣列)
+[bail(停止)](#bail停止)
 [boolean(布林值)](#booleanbool布林值)
 [max(小於)](#max小於value)
 [in(包含)](#in包含valuelist)
@@ -167,6 +173,28 @@ if value not in ["yes","on",1,"1",True,"true"]:
     return seterror(testkey,rulename)
 ```
 
+---
+
+### accepted_if(如果...接受):*filed，value，...*
+驗證中的欄位必須是"yes"、"on"、1、"1"、true或"true"如果驗證中的另一個欄位等於指定值。這對於驗證「服務條款」接受或類似欄位很有用。
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+if len(rulevaluelist)!=2:
+    return seterror(testkey,rulename)
+otherkey=rulevaluelist[0]
+othervalue=rulevaluelist[1]
+othertarget=getvaluebypath(data,otherkey)
+if othertarget==othervalue:
+    if value not in ["yes","on",1,"1",True,"true"]:
+        return seterror(testkey,rulename)
+```
+
+---
+
 ### array(陣列)
 驗證下的欄位必須是array。也就是需符合List型別。
 
@@ -179,6 +207,53 @@ if not isinstance(value,list):
     return seterror(testkey,rulename)
 ```
 
+---
+
+### bail(停止)
+第一次驗證失敗後停止執行該欄位的驗證規則。
+
+當bail規則僅在遇到驗證失敗時才會停止驗證特定字段，您可以使用函數內的第四個參數**checkall=True**，一旦發生單一驗證失敗，它應該停止驗證所有屬性。
+
+範例:
+```py
+validate(data={
+    "key": 123
+},rule={
+    "key": "bail|required|string|min:2"
+},error={
+    "bail": "ERROR_bail",
+    "required": "ERROR_required",
+    "string": "ERROR_type_string",
+    "min": "ERROR_min_length"
+},checkall=True)
+```
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+bailstop=False
+for testrule in testrulelist:
+    if bailstop:
+        break
+
+    returndata=test(fullkey,testrule,value)
+
+    if not returndata["check"]:
+        check=False
+        errordata[fullkey]={}
+        errordata[fullkey][returndata["rulename"]]=returndata["errordata"].replace(":key",f"'{fullkey.split(".")[-1]}'")
+        if not firsterror:
+            firsterror=returndata["errordata"].replace(":key",f"'{fullkey.split(".")[-1]}'")
+        if not checkall:
+            break
+        if "bail" in testrulelist:
+            bailstop=True
+```
+
+---
+
 ### boolean|bool(布林值)
 驗證下的欄位必須能夠轉換為布林值。接受的輸入是true、false、1、0、"1"、"0"
 
@@ -190,6 +265,8 @@ if not isinstance(value,list):
 if not isinstance(value,bool) and value not in [0,1,"0","1"]:
     return seterror(testkey,rulename)
 ```
+
+---
 
 ### in(包含):*valuelist*
 驗證字串是否包含在給定的值清單中(以逗號分隔)。
@@ -214,6 +291,8 @@ else:
 in_array:另一個字段.*
 驗證下的欄位必須存在於anotherfield的值中。
 
+---
+
 ### integer|int(整數)
 驗證的欄位必須是整數。
 
@@ -227,6 +306,8 @@ in_array:另一個字段.*
 if not isinstance(value,int) and not isinstance(value,float):
     return seterror(testkey,rulename)
 ```
+
+---
 
 ### ip
 驗證的欄位必須是IP地址。
@@ -257,6 +338,7 @@ except:
     return seterror(testkey,rulename)
 ```
 
+---
 
 ### ipv6
 驗證下的欄位必須是IPv6地址。
@@ -286,6 +368,8 @@ if not isinstance(value,dict):
     return seterror(testkey,rulename)
 ```
 
+---
+
 ### max(小於):*value{int}*
 驗證的欄位必須小於或等於給定值。字串、數字、陣列和檔案的評估方式與size規則相同。
 
@@ -302,6 +386,8 @@ except:
     return seterror(testkey,rulename)
 ```
 
+---
+
 ### min(大於):*value{int}*
 驗證的欄位必須大於給定值。字串、數字、陣列和檔案的評估方式與size規則相同。
 
@@ -317,6 +403,8 @@ try:
 except:
     return seterror(testkey,rulename)
 ```
+
+---
 
 ### not_regex(非正規表達式):*value{regex}*
 驗證的欄位不能與給定的正規表示式相符。
@@ -363,6 +451,8 @@ if regex.search(value):
     return seterror(testkey,rulename)
 ```
 
+---
+
 ### nullable(可空)
 正在驗證的欄位可能是null。
 
@@ -375,6 +465,8 @@ if not (("nullable" in testrulelist) and (value==None)):
     # 正常的驗證規則在這
     # ...
 ```
+
+---
 
 ### regex(正規表達式):*value{regex}*
 驗證下的欄位必須與給定的正規表示式相符。
@@ -421,6 +513,8 @@ if not regex.search(value):
     return seterror(testkey,rulename)
 ```
 
+---
+
 ### required(必填的)
 驗證欄位必須存在於輸入資料中且不能為空。如果欄位符合以下條件之一，則該欄位為「空」：
 - 值為null。
@@ -436,6 +530,8 @@ if not regex.search(value):
 if value is None or value=="" or value==[] or value=={}:
     return seterror(testkey,rulename)
 ```
+
+---
 
 ### size(大小):*value{int}*
 驗證欄位的大小必須與給定的值相符。對於字串數據，值對應於字元數。對於數值數據，值對應於給定的整數值（屬性也必須具有numeric或integer規則）。對於數組來說，大小對應於count數組的。對於文件，大小對應於文件大小（以千位元組為單位）。讓我們來看一些例子：
@@ -477,8 +573,7 @@ except:
     return seterror(testkey,rulename)
 ```
 
-開始於：foo，bar，...
-驗證下的欄位必須以給定值之一開頭。
+---
 
 ### string|str(字串)
 驗證的字段必須是字串。如果您希望允許該欄位也允許null，則應將nullable規則指派給該欄位。
@@ -502,4 +597,4 @@ if not isinstance(value,str):
 
 ### 參見
 
-*20250704 v001000001*
+*20250706 v001000002*

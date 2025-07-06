@@ -620,17 +620,64 @@ class TestValidation(unittest.TestCase):
 		result=validate(data,rule,error)
 		self.assertFalse(result["success"])
 
-	def test038acceptederror2(self):
+	def test039acceptedifsuccess(self):
 		data={
-			"name": "nonono"
+			"agree": "yes",
+			"type": "confirm"
 		}
 		rule={
-			"name": "required|accepted"
+			"agree": "accepted_if:type,confirm"
 		}
 		error={
-			"accepted": "ERROR_request_datatype_error"
+			"accepted_if": "ERROR_request_datatype_error"
+		}
+		result=validate(data,rule,error)
+		self.assertTrue(result["success"])
+
+	def test040acceptediferror(self):
+		data={
+			"agree": "no",
+			"type": "confirm"
+		}
+		rule={
+			"agree": "accepted_if:type,confirm"
+		}
+		error={
+			"accepted_if": "ERROR_request_datatype_error"
 		}
 		result=validate(data,rule,error)
 		self.assertFalse(result["success"])
+
+	def test041bailsuccess(self):
+		result=validate({
+			"key": "abc"
+		},{
+			"key": "bail|required|string|min:2"
+		},{
+			"bail": "ERROR_bail",
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"min": "ERROR_min_length"
+		},True)
+		self.assertTrue(result["success"])
+
+	def test042bailfail(self):
+		result=validate({
+			"key": 123
+		},{
+			"key": "bail|required|string|min:2"
+		},{
+			"bail": "ERROR_bail",
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"min": "ERROR_min_length"
+		},True)
+		self.assertFalse(result["success"])
+		self.assertEqual(result["data"],{
+			"key": {
+				"string": "ERROR_type_string"
+			}
+		})
+		self.assertEqual(result["error"],"ERROR_type_string")
 if __name__=="__main__":
 	unittest.main()
