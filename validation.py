@@ -1,5 +1,6 @@
-import re
 import ipaddress
+import re
+import socket
 
 customrules={}  # 自訂驗證規則儲存區
 null=[None,"",[],{}]
@@ -95,6 +96,12 @@ def validate(data,rule,error,checkall=False):
 				if othertarget==othervalue:
 					if value not in ["yes","on",1,"1",True,"true"]:
 						return seterror(testkey,rulename)
+			elif rulename=="active_url":
+				try:
+					host=re.sub(r"^https?://","",value).split("/")[0]
+					socket.gethostbyname(host)
+				except:
+					return seterror(testkey,rulename)
 			elif rulename=="array":
 				if not isinstance(value,list):
 					return seterror(testkey,rulename)

@@ -661,7 +661,7 @@ class TestValidation(unittest.TestCase):
 		},True)
 		self.assertTrue(result["success"])
 
-	def test042bailfail(self):
+	def test042bailerror(self):
 		result=validate({
 			"key": 123
 		},{
@@ -679,5 +679,33 @@ class TestValidation(unittest.TestCase):
 			}
 		})
 		self.assertEqual(result["error"],"ERROR_type_string")
+
+	def test043active_urlsuccess(self):
+		result=validate({
+			"key": "https://google.com"
+		},{
+			"key": "required|active_url|string"
+		},{
+			"bail": "ERROR_bail",
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"active_url": "ERROR_url_unreachable"
+		},True)
+		self.assertTrue(result["success"])
+
+	def test044active_urlerror(self):
+		result=validate({
+			"key": "errorurl"
+		},{
+			"key": "required|active_url|string"
+		},{
+			"bail": "ERROR_bail",
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"active_url": "ERROR_url_unreachable"
+		},True)
+		self.assertFalse(result["success"])
+		self.assertEqual(result["error"],"ERROR_url_unreachable")
+
 if __name__=="__main__":
 	unittest.main()

@@ -13,42 +13,44 @@
       - [Implementation](#implementation)
     - [accepted\_if:*anotherfield,value,...*](#accepted_ifanotherfieldvalue)
       - [Implementation](#implementation-1)
-    - [array](#array)
+    - [active\_url](#active_url)
       - [Implementation](#implementation-2)
-    - [bail](#bail)
+    - [array](#array)
       - [Implementation](#implementation-3)
-    - [boolean|bool](#booleanbool)
+    - [bail](#bail)
       - [Implementation](#implementation-4)
-    - [in:*valuelist*](#invaluelist)
+    - [boolean|bool](#booleanbool)
       - [Implementation](#implementation-5)
+    - [in:*valuelist*](#invaluelist)
+      - [Implementation](#implementation-6)
     - [in\_array:anotherfield.\*](#in_arrayanotherfield)
     - [integer|int](#integerint)
-      - [Implementation](#implementation-6)
-    - [ip](#ip)
       - [Implementation](#implementation-7)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [Implementation](#implementation-8)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [Implementation](#implementation-9)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [Implementation](#implementation-10)
-    - [max:*value{int}*](#maxvalueint)
+    - [json](#json)
       - [Implementation](#implementation-11)
-    - [min:*value{int}*](#minvalueint)
+    - [max:*value{int}*](#maxvalueint)
       - [Implementation](#implementation-12)
-    - [not\_regex:*value{regex}*](#not_regexvalueregex)
+    - [min:*value{int}*](#minvalueint)
       - [Implementation](#implementation-13)
-    - [nullable](#nullable)
+    - [not\_regex:*value{regex}*](#not_regexvalueregex)
       - [Implementation](#implementation-14)
-    - [regex:*value{regex}*](#regexvalueregex)
+    - [nullable](#nullable)
       - [Implementation](#implementation-15)
-    - [required](#required)
+    - [regex:*value{regex}*](#regexvalueregex)
       - [Implementation](#implementation-16)
-    - [size:*value{int}*](#sizevalueint)
+    - [required](#required)
       - [Implementation](#implementation-17)
+    - [size:*value{int}*](#sizevalueint)
+      - [Implementation](#implementation-18)
     - [starts\_with:foo,bar,...](#starts_withfoobar)
     - [string|str](#stringstr)
-      - [Implementation](#implementation-18)
+      - [Implementation](#implementation-19)
   - [12. Notes and References](#12-notes-and-references)
     - [Notes](#notes)
     - [References](#references)
@@ -145,6 +147,7 @@ Here is the list of all available validation rules:
 
 [accepted](#accepted)
 [accepted_if](#accepted_ifanotherfieldvalue)
+[active_url](#active_url)
 [array](#array)
 [bail](#bail)
 [boolean](#booleanbool)
@@ -194,6 +197,23 @@ othervalue=rulevalue[1]
 if otherkey in datadict and datadict[otherkey]==othervalue:
     if value not in ["yes","on",1,"1",True,"true"]:
         return seterror(testkey,rulename)
+```
+
+---
+
+### active_url
+The field under validation must have a valid A or AAAA record according to the socket.gethostbyname function.
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+try:
+    host=re.sub(r"^https?://","",value).split("/")[0]
+    socket.gethostbyname(host)
+except:
+    return seterror(testkey,rulename)
 ```
 
 ---
@@ -611,4 +631,4 @@ this note is write by chatgpt, maybe will have some mistake.
 
 ### References
 
-*20250706 v001000002*
+*20250707 v001000003*

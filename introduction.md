@@ -13,40 +13,42 @@
       - [實作方式](#實作方式)
     - [accepted\_if(如果...接受):*filed，value，...*](#accepted_if如果接受filedvalue)
       - [實作方式](#實作方式-1)
-    - [array(陣列)](#array陣列)
+    - [active\_url(真實URL)](#active_url真實url)
       - [實作方式](#實作方式-2)
-    - [bail(停止)](#bail停止)
+    - [array(陣列)](#array陣列)
       - [實作方式](#實作方式-3)
-    - [boolean|bool(布林值)](#booleanbool布林值)
+    - [bail(停止)](#bail停止)
       - [實作方式](#實作方式-4)
-    - [in(包含):*valuelist*](#in包含valuelist)
+    - [boolean|bool(布林值)](#booleanbool布林值)
       - [實作方式](#實作方式-5)
-    - [integer|int(整數)](#integerint整數)
+    - [in(包含):*valuelist*](#in包含valuelist)
       - [實作方式](#實作方式-6)
-    - [ip](#ip)
+    - [integer|int(整數)](#integerint整數)
       - [實作方式](#實作方式-7)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [實作方式](#實作方式-8)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [實作方式](#實作方式-9)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [實作方式](#實作方式-10)
-    - [max(小於):*value{int}*](#max小於valueint)
+    - [json](#json)
       - [實作方式](#實作方式-11)
-    - [min(大於):*value{int}*](#min大於valueint)
+    - [max(小於):*value{int}*](#max小於valueint)
       - [實作方式](#實作方式-12)
-    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
+    - [min(大於):*value{int}*](#min大於valueint)
       - [實作方式](#實作方式-13)
-    - [nullable(可空)](#nullable可空)
+    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
       - [實作方式](#實作方式-14)
-    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
+    - [nullable(可空)](#nullable可空)
       - [實作方式](#實作方式-15)
-    - [required(必填的)](#required必填的)
+    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
       - [實作方式](#實作方式-16)
-    - [size(大小):*value{int}*](#size大小valueint)
+    - [required(必填的)](#required必填的)
       - [實作方式](#實作方式-17)
-    - [string|str(字串)](#stringstr字串)
+    - [size(大小):*value{int}*](#size大小valueint)
       - [實作方式](#實作方式-18)
+    - [string|str(字串)](#stringstr字串)
+      - [實作方式](#實作方式-19)
   - [十二、註解及參見](#十二註解及參見)
     - [註解](#註解)
     - [參見](#參見)
@@ -143,6 +145,7 @@ def signin(request):
 
 [accepted(接受)](#accepted接受)
 [accepted_if(如果...接受)](#accepted_if如果接受filedvalue)
+[active_url(真實URL)](#active_url真實URL)
 [array(陣列)](#array陣列)
 [bail(停止)](#bail停止)
 [boolean(布林值)](#booleanbool布林值)
@@ -191,6 +194,23 @@ othertarget=getvaluebypath(data,otherkey)
 if othertarget==othervalue:
     if value not in ["yes","on",1,"1",True,"true"]:
         return seterror(testkey,rulename)
+```
+
+---
+
+### active_url(真實URL)
+驗證下的欄位必須根據socket.gethostbyname函數具有有效的 A 或 AAAA 記錄。
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+try:
+    host=re.sub(r"^https?://","",value).split("/")[0]
+    socket.gethostbyname(host)
+except:
+    return seterror(testkey,rulename)
 ```
 
 ---
@@ -597,4 +617,4 @@ if not isinstance(value,str):
 
 ### 參見
 
-*20250706 v001000002*
+*20250707 v001000003*
