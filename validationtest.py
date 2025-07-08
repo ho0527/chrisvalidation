@@ -707,5 +707,30 @@ class TestValidation(unittest.TestCase):
 		self.assertFalse(result["success"])
 		self.assertEqual(result["error"],"ERROR_url_unreachable")
 
+	def test045aftersuccess(self):
+		result=validate({
+			"start": "2025-02-05"
+		},{
+			"start": "required|string|after:2025-01-01"
+		},{
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"after": "ERROR_date_must_be_later"
+		})
+		self.assertTrue(result["success"])
+
+	def test046aftererror(self):
+		result=validate({
+			"start": "2024-02-05"
+		},{
+			"start": "required|string|after:2025-01-01"
+		},{
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"after": "ERROR_date_must_be_later"
+		})
+		self.assertFalse(result["success"])
+		self.assertEqual(result["error"],"ERROR_date_must_be_later")
+
 if __name__=="__main__":
 	unittest.main()

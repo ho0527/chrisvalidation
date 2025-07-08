@@ -1,6 +1,7 @@
 import ipaddress
 import re
 import socket
+from datetime import datetime,timedelta
 
 customrules={}  # 自訂驗證規則儲存區
 null=[None,"",[],{}]
@@ -100,6 +101,31 @@ def validate(data,rule,error,checkall=False):
 				try:
 					host=re.sub(r"^https?://","",value).split("/")[0]
 					socket.gethostbyname(host)
+				except:
+					return seterror(testkey,rulename)
+			elif rulename=="after":
+				try:
+					ref=rulevaluelist[0]
+					# 嘗試用欄位方式抓比較值
+					refvalue=data.get(ref)
+
+					if refvalue is not None:
+						comparedate=datetime.fromisoformat(str(refvalue))
+					else:
+						# 無對應欄位時，視為 strtotime 類型（支援 today/tomorrow）
+						now=datetime.now()
+						if ref=="today":
+							comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+						elif ref=="tomorrow":
+							comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+						elif ref=="yesterday":
+							comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+						else:
+							comparedate=datetime.fromisoformat(ref)
+
+					inputdate=datetime.fromisoformat(str(value))
+					if inputdate<=comparedate:
+						return seterror(testkey,rulename)
 				except:
 					return seterror(testkey,rulename)
 			elif rulename=="array":

@@ -15,42 +15,44 @@
       - [Implementation](#implementation-1)
     - [active\_url](#active_url)
       - [Implementation](#implementation-2)
-    - [array](#array)
+    - [after:*date*](#afterdate)
       - [Implementation](#implementation-3)
-    - [bail](#bail)
+    - [array](#array)
       - [Implementation](#implementation-4)
-    - [boolean|bool](#booleanbool)
+    - [bail](#bail)
       - [Implementation](#implementation-5)
-    - [in:*valuelist*](#invaluelist)
+    - [boolean|bool](#booleanbool)
       - [Implementation](#implementation-6)
+    - [in:*valuelist*](#invaluelist)
+      - [Implementation](#implementation-7)
     - [in\_array:anotherfield.\*](#in_arrayanotherfield)
     - [integer|int](#integerint)
-      - [Implementation](#implementation-7)
-    - [ip](#ip)
       - [Implementation](#implementation-8)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [Implementation](#implementation-9)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [Implementation](#implementation-10)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [Implementation](#implementation-11)
-    - [max:*value{int}*](#maxvalueint)
+    - [json](#json)
       - [Implementation](#implementation-12)
-    - [min:*value{int}*](#minvalueint)
+    - [max:*value{int}*](#maxvalueint)
       - [Implementation](#implementation-13)
-    - [not\_regex:*value{regex}*](#not_regexvalueregex)
+    - [min:*value{int}*](#minvalueint)
       - [Implementation](#implementation-14)
-    - [nullable](#nullable)
+    - [not\_regex:*value{regex}*](#not_regexvalueregex)
       - [Implementation](#implementation-15)
-    - [regex:*value{regex}*](#regexvalueregex)
+    - [nullable](#nullable)
       - [Implementation](#implementation-16)
-    - [required](#required)
+    - [regex:*value{regex}*](#regexvalueregex)
       - [Implementation](#implementation-17)
-    - [size:*value{int}*](#sizevalueint)
+    - [required](#required)
       - [Implementation](#implementation-18)
+    - [size:*value{int}*](#sizevalueint)
+      - [Implementation](#implementation-19)
     - [starts\_with:foo,bar,...](#starts_withfoobar)
     - [string|str](#stringstr)
-      - [Implementation](#implementation-19)
+      - [Implementation](#implementation-20)
   - [12. Notes and References](#12-notes-and-references)
     - [Notes](#notes)
     - [References](#references)
@@ -148,6 +150,7 @@ Here is the list of all available validation rules:
 [accepted](#accepted)
 [accepted_if](#accepted_ifanotherfieldvalue)
 [active_url](#active_url)
+[after](#afterdate)
 [array](#array)
 [bail](#bail)
 [boolean](#booleanbool)
@@ -212,6 +215,51 @@ code:
 try:
     host=re.sub(r"^https?://","",value).split("/")[0]
     socket.gethostbyname(host)
+except:
+    return seterror(testkey,rulename)
+```
+
+---
+
+### after:*date*
+
+The field under validation must be a value after a given date. The dates will be passed into the fromisoformat PHP function in order to be converted to a valid DateTime instance:
+
+```json
+{"start_date": "required|date|after:tomorrow"}
+```
+
+Instead of passing a date string to be evaluated by strtotime, you may specify another field to compare against the date:
+
+```json
+{"finish_date": "required|date|after:start_date"}
+```
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+try:
+    ref=rulevaluelist[0]
+    refvalue=data.get(ref)
+
+    if refvalue is not None:
+        comparedate=datetime.fromisoformat(str(refvalue))
+    else:
+        now=datetime.now()
+        if ref=="today":
+            comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="tomorrow":
+            comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="yesterday":
+            comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        else:
+            comparedate=datetime.fromisoformat(ref)
+
+    inputdate=datetime.fromisoformat(str(value))
+    if inputdate<=comparedate:
+        return seterror(testkey,rulename)
 except:
     return seterror(testkey,rulename)
 ```
@@ -631,4 +679,4 @@ this note is write by chatgpt, maybe will have some mistake.
 
 ### References
 
-*20250707 v001000003*
+*20250708 v001000004*
