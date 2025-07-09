@@ -21,36 +21,38 @@
       - [實作方式](#實作方式-4)
     - [bail(停止)](#bail停止)
       - [實作方式](#實作方式-5)
-    - [boolean|bool(布林值)](#booleanbool布林值)
+    - [before(之前):*date*](#before之前date)
       - [實作方式](#實作方式-6)
-    - [in(包含):*valuelist*](#in包含valuelist)
+    - [boolean|bool(布林值)](#booleanbool布林值)
       - [實作方式](#實作方式-7)
-    - [integer|int(整數)](#integerint整數)
+    - [in(包含):*valuelist*](#in包含valuelist)
       - [實作方式](#實作方式-8)
-    - [ip](#ip)
+    - [integer|int(整數)](#integerint整數)
       - [實作方式](#實作方式-9)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [實作方式](#實作方式-10)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [實作方式](#實作方式-11)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [實作方式](#實作方式-12)
-    - [max(小於):*value{int}*](#max小於valueint)
+    - [json](#json)
       - [實作方式](#實作方式-13)
-    - [min(大於):*value{int}*](#min大於valueint)
+    - [max(小於):*value{int}*](#max小於valueint)
       - [實作方式](#實作方式-14)
-    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
+    - [min(大於):*value{int}*](#min大於valueint)
       - [實作方式](#實作方式-15)
-    - [nullable(可空)](#nullable可空)
+    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
       - [實作方式](#實作方式-16)
-    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
+    - [nullable(可空)](#nullable可空)
       - [實作方式](#實作方式-17)
-    - [required(必填的)](#required必填的)
+    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
       - [實作方式](#實作方式-18)
-    - [size(大小):*value{int}*](#size大小valueint)
+    - [required(必填的)](#required必填的)
       - [實作方式](#實作方式-19)
-    - [string|str(字串)](#stringstr字串)
+    - [size(大小):*value{int}*](#size大小valueint)
       - [實作方式](#實作方式-20)
+    - [string|str(字串)](#stringstr字串)
+      - [實作方式](#實作方式-21)
   - [十二、註解及參見](#十二註解及參見)
     - [註解](#註解)
     - [參見](#參見)
@@ -151,6 +153,7 @@ def signin(request):
 [after(之後)](#after之後date)
 [array(陣列)](#array陣列)
 [bail(停止)](#bail停止)
+[before(之前)](#before之前date)
 [boolean(布林值)](#booleanbool布林值)
 [max(小於)](#max小於value)
 [in(包含)](#in包含valuelist)
@@ -316,6 +319,49 @@ for testrule in testrulelist:
             break
         if "bail" in testrulelist:
             bailstop=True
+```
+
+---
+
+### before(之前):*date*
+
+驗證的欄位必須是給定日期之前的值。日期將傳遞到fromisoformat函數中，以便轉換為有效DateTime實例：
+```json
+{"start_date": "required|date|before:tomorrow"}
+```
+
+您無需傳遞要評估的日期字串strtotime，而是可以指定另一個欄位來與日期進行比較：
+```json
+{"finish_date": "required|date|before:start_date"}
+```
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+try:
+    ref=rulevaluelist[0]
+    refvalue=data.get(ref)
+
+    if refvalue is not None:
+        comparedate=datetime.fromisoformat(str(refvalue))
+    else:
+        now=datetime.now()
+        if ref=="today":
+            comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="tomorrow":
+            comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="yesterday":
+            comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        else:
+            comparedate=datetime.fromisoformat(ref)
+
+    inputdate=datetime.fromisoformat(str(value))
+    if comparedate<=inputdate:
+        return seterror(testkey,rulename)
+except:
+    return seterror(testkey,rulename)
 ```
 
 ---
@@ -663,4 +709,4 @@ if not isinstance(value,str):
 
 ### 參見
 
-*20250708 v001000004*
+*20250709 v001000005*

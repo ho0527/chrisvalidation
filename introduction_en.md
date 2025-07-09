@@ -21,38 +21,40 @@
       - [Implementation](#implementation-4)
     - [bail](#bail)
       - [Implementation](#implementation-5)
-    - [boolean|bool](#booleanbool)
+    - [before:*date*](#beforedate)
       - [Implementation](#implementation-6)
-    - [in:*valuelist*](#invaluelist)
+    - [boolean|bool](#booleanbool)
       - [Implementation](#implementation-7)
+    - [in:*valuelist*](#invaluelist)
+      - [Implementation](#implementation-8)
     - [in\_array:anotherfield.\*](#in_arrayanotherfield)
     - [integer|int](#integerint)
-      - [Implementation](#implementation-8)
-    - [ip](#ip)
       - [Implementation](#implementation-9)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [Implementation](#implementation-10)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [Implementation](#implementation-11)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [Implementation](#implementation-12)
-    - [max:*value{int}*](#maxvalueint)
+    - [json](#json)
       - [Implementation](#implementation-13)
-    - [min:*value{int}*](#minvalueint)
+    - [max:*value{int}*](#maxvalueint)
       - [Implementation](#implementation-14)
-    - [not\_regex:*value{regex}*](#not_regexvalueregex)
+    - [min:*value{int}*](#minvalueint)
       - [Implementation](#implementation-15)
-    - [nullable](#nullable)
+    - [not\_regex:*value{regex}*](#not_regexvalueregex)
       - [Implementation](#implementation-16)
-    - [regex:*value{regex}*](#regexvalueregex)
+    - [nullable](#nullable)
       - [Implementation](#implementation-17)
-    - [required](#required)
+    - [regex:*value{regex}*](#regexvalueregex)
       - [Implementation](#implementation-18)
-    - [size:*value{int}*](#sizevalueint)
+    - [required](#required)
       - [Implementation](#implementation-19)
+    - [size:*value{int}*](#sizevalueint)
+      - [Implementation](#implementation-20)
     - [starts\_with:foo,bar,...](#starts_withfoobar)
     - [string|str](#stringstr)
-      - [Implementation](#implementation-20)
+      - [Implementation](#implementation-21)
   - [12. Notes and References](#12-notes-and-references)
     - [Notes](#notes)
     - [References](#references)
@@ -153,6 +155,7 @@ Here is the list of all available validation rules:
 [after](#afterdate)
 [array](#array)
 [bail](#bail)
+[before](#beforedate)
 [boolean](#booleanbool)
 [max](#maxvalue)
 [in](#invaluelist)
@@ -324,6 +327,53 @@ for testrule in testrulelist:
         if "bail" in testrulelist:
             bailstop=True
 ```
+
+---
+
+### before:*date*
+
+The field under validation must be a value before a given date. The dates will be passed into the fromisoformat PHP function in order to be converted to a valid DateTime instance:
+
+```json
+{"start_date": "required|date|before:tomorrow"}
+```
+
+Instead of passing a date string to be evaluated by strtotime, you may specify another field to compare against the date:
+
+```json
+{"finish_date": "required|date|before:start_date"}
+```
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+try:
+    ref=rulevaluelist[0]
+    refvalue=data.get(ref)
+
+    if refvalue is not None:
+        comparedate=datetime.fromisoformat(str(refvalue))
+    else:
+        now=datetime.now()
+        if ref=="today":
+            comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="tomorrow":
+            comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="yesterday":
+            comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        else:
+            comparedate=datetime.fromisoformat(ref)
+
+    inputdate=datetime.fromisoformat(str(value))
+    if inputdate<=comparedate:
+        return seterror(testkey,rulename)
+except:
+    return seterror(testkey,rulename)
+```
+
+---
 
 ### boolean|bool
 
@@ -679,4 +729,4 @@ this note is write by chatgpt, maybe will have some mistake.
 
 ### References
 
-*20250708 v001000004*
+*20250709 v001000005*
