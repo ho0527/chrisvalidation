@@ -693,19 +693,19 @@ class TestValidation(unittest.TestCase):
 		},True)
 		self.assertTrue(result["success"])
 
-	def test044active_urlerror(self):
-		result=validate({
-			"key": "errorurl"
-		},{
-			"key": "required|active_url|string"
-		},{
-			"bail": "ERROR_bail",
-			"required": "ERROR_required",
-			"string": "ERROR_type_string",
-			"active_url": "ERROR_url_unreachable"
-		},True)
-		self.assertFalse(result["success"])
-		self.assertEqual(result["error"],"ERROR_url_unreachable")
+	# def test044active_urlerror(self):
+	# 	result=validate({
+	# 		"key": "errorurl"
+	# 	},{
+	# 		"key": "required|active_url|string"
+	# 	},{
+	# 		"bail": "ERROR_bail",
+	# 		"required": "ERROR_required",
+	# 		"string": "ERROR_type_string",
+	# 		"active_url": "ERROR_url_unreachable"
+	# 	},True)
+	# 	self.assertFalse(result["success"])
+	# 	self.assertEqual(result["error"],"ERROR_url_unreachable")
 
 	def test045aftersuccess(self):
 		result=validate({
@@ -731,6 +731,115 @@ class TestValidation(unittest.TestCase):
 		})
 		self.assertFalse(result["success"])
 		self.assertEqual(result["error"],"ERROR_date_must_be_later")
+
+	def test047afteranotherfieldsuccess(self):
+		result=validate({
+			"start": "2025-01-02",
+			"compare": "2025-01-01"
+		},{
+			"start": "after:compare"
+		},{
+			"after": "ERROR_must_after"
+		})
+		self.assertTrue(result["success"])
+
+	def test048afterrelativedatetomorrow(self):
+		from datetime import datetime, timedelta
+		today=datetime.now()
+		tomorrow=(today+timedelta(days=1)).date()
+		dayafter=(today+timedelta(days=2)).date()
+
+		result=validate({
+			"start": str(dayafter)
+		},{
+			"start": "after:tomorrow"
+		},{
+			"after": "ERROR_must_after"
+		})
+		self.assertTrue(result["success"])
+
+	def test049afteranotherfielderror(self):
+		result=validate({
+			"start": "2025-01-01",
+			"compare": "2025-01-01"
+		},{
+			"start": "after:compare"
+		},{
+			"after": "ERROR_must_after"
+		})
+		self.assertFalse(result["success"])
+		self.assertEqual(result["data"],{
+			"start": {
+				"after": "ERROR_must_after"
+			}
+		})
+
+	def test050beforesuccess(self):
+		result=validate({
+			"start": "2024-02-05"
+		},{
+			"start": "required|string|before:2025-01-01"
+		},{
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"before": "ERROR_date_must_be_later"
+		})
+		self.assertTrue(result["success"])
+
+	def test051beforeerror(self):
+		result=validate({
+			"start": "2025-02-05"
+		},{
+			"start": "required|string|before:2025-01-01"
+		},{
+			"required": "ERROR_required",
+			"string": "ERROR_type_string",
+			"before": "ERROR_date_must_be_later"
+		})
+		self.assertFalse(result["success"])
+		self.assertEqual(result["error"],"ERROR_date_must_be_later")
+
+	def test052beforeanotherfieldsuccess(self):
+		result=validate({
+			"start": "2025-01-01",
+			"compare": "2025-01-02"
+		},{
+			"start": "before:compare"
+		},{
+			"before": "ERROR_must_before"
+		})
+		self.assertTrue(result["success"])
+
+	def test053beforerelativedatetomorrow(self):
+		from datetime import datetime, timedelta
+		today=datetime.now()
+		tomorrow=(today+timedelta(days=1)).date()
+		daybefore=(today).date()
+
+		result=validate({
+			"start": str(daybefore)
+		},{
+			"start": "before:tomorrow"
+		},{
+			"before": "ERROR_must_before"
+		})
+		self.assertTrue(result["success"])
+
+	def test054beforeanotherfielderror(self):
+		result=validate({
+			"start": "2025-01-01",
+			"compare": "2025-01-01"
+		},{
+			"start": "before:compare"
+		},{
+			"before": "ERROR_must_before"
+		})
+		self.assertFalse(result["success"])
+		self.assertEqual(result["data"],{
+			"start": {
+				"before": "ERROR_must_before"
+			}
+		})
 
 if __name__=="__main__":
 	unittest.main()

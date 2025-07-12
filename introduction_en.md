@@ -17,44 +17,48 @@
       - [Implementation](#implementation-2)
     - [after:*date*](#afterdate)
       - [Implementation](#implementation-3)
-    - [array](#array)
+    - [after\_or\_equal:*date*](#after_or_equaldate)
       - [Implementation](#implementation-4)
-    - [bail](#bail)
+    - [array](#array)
       - [Implementation](#implementation-5)
-    - [before:*date*](#beforedate)
+    - [bail](#bail)
       - [Implementation](#implementation-6)
-    - [boolean|bool](#booleanbool)
+    - [before:*date*](#beforedate)
       - [Implementation](#implementation-7)
-    - [in:*valuelist*](#invaluelist)
+    - [before\_or\_equal:*date*](#before_or_equaldate)
       - [Implementation](#implementation-8)
+    - [boolean|bool](#booleanbool)
+      - [Implementation](#implementation-9)
+    - [in:*valuelist*](#invaluelist)
+      - [Implementation](#implementation-10)
     - [in\_array:anotherfield.\*](#in_arrayanotherfield)
     - [integer|int](#integerint)
-      - [Implementation](#implementation-9)
-    - [ip](#ip)
-      - [Implementation](#implementation-10)
-    - [ipv4](#ipv4)
       - [Implementation](#implementation-11)
-    - [ipv6](#ipv6)
+    - [ip](#ip)
       - [Implementation](#implementation-12)
-    - [json](#json)
+    - [ipv4](#ipv4)
       - [Implementation](#implementation-13)
-    - [max:*value{int}*](#maxvalueint)
+    - [ipv6](#ipv6)
       - [Implementation](#implementation-14)
-    - [min:*value{int}*](#minvalueint)
+    - [json](#json)
       - [Implementation](#implementation-15)
-    - [not\_regex:*value{regex}*](#not_regexvalueregex)
+    - [max:*value{int}*](#maxvalueint)
       - [Implementation](#implementation-16)
-    - [nullable](#nullable)
+    - [min:*value{int}*](#minvalueint)
       - [Implementation](#implementation-17)
-    - [regex:*value{regex}*](#regexvalueregex)
+    - [not\_regex:*value{regex}*](#not_regexvalueregex)
       - [Implementation](#implementation-18)
-    - [required](#required)
+    - [nullable](#nullable)
       - [Implementation](#implementation-19)
-    - [size:*value{int}*](#sizevalueint)
+    - [regex:*value{regex}*](#regexvalueregex)
       - [Implementation](#implementation-20)
+    - [required](#required)
+      - [Implementation](#implementation-21)
+    - [size:*value{int}*](#sizevalueint)
+      - [Implementation](#implementation-22)
     - [starts\_with:foo,bar,...](#starts_withfoobar)
     - [string|str](#stringstr)
-      - [Implementation](#implementation-21)
+      - [Implementation](#implementation-23)
   - [12. Notes and References](#12-notes-and-references)
     - [Notes](#notes)
     - [References](#references)
@@ -153,9 +157,11 @@ Here is the list of all available validation rules:
 [accepted_if](#accepted_ifanotherfieldvalue)
 [active_url](#active_url)
 [after](#afterdate)
+[after_or_equal](#after_or_equaldate)
 [array](#array)
 [bail](#bail)
 [before](#beforedate)
+[before_or_equal](#before_or_equaldate)
 [boolean](#booleanbool)
 [max](#maxvalue)
 [in](#invaluelist)
@@ -269,6 +275,51 @@ except:
 
 ---
 
+### after_or_equal:*date*
+
+The field under validation must be a value after or equal to a given date. The dates will be passed into the fromisoformat PHP function in order to be converted to a valid DateTime instance:
+
+```json
+{"start_date": "required|date|after_or_equal:tomorrow"}
+```
+
+Instead of passing a date string to be evaluated by strtotime, you may specify another field to compare against the date:
+
+```json
+{"finish_date": "required|date|after_or_equal:start_date"}
+```
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+try:
+    ref=rulevaluelist[0]
+    refvalue=data.get(ref)
+
+    if refvalue is not None:
+        comparedate=datetime.fromisoformat(str(refvalue))
+    else:
+        now=datetime.now()
+        if ref=="today":
+            comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="tomorrow":
+            comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="yesterday":
+            comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        else:
+            comparedate=datetime.fromisoformat(ref)
+
+    inputdate=datetime.fromisoformat(str(value))
+    if inputdate<comparedate:
+        return seterror(testkey,rulename)
+except:
+    return seterror(testkey,rulename)
+```
+
+---
+
 ### array
 
 The field being validated must be an array (i.e., must be of `list` type).
@@ -368,6 +419,51 @@ try:
 
     inputdate=datetime.fromisoformat(str(value))
     if inputdate<=comparedate:
+        return seterror(testkey,rulename)
+except:
+    return seterror(testkey,rulename)
+```
+
+---
+
+### before_or_equal:*date*
+
+The field under validation must be a value before or equal to a given date. The dates will be passed into the fromisoformat PHP function in order to be converted to a valid DateTime instance:
+
+```json
+{"start_date": "required|date|before_or_equal:tomorrow"}
+```
+
+Instead of passing a date string to be evaluated by strtotime, you may specify another field to compare against the date:
+
+```json
+{"finish_date": "required|date|before_or_equal:start_date"}
+```
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+try:
+    ref=rulevaluelist[0]
+    refvalue=data.get(ref)
+
+    if refvalue is not None:
+        comparedate=datetime.fromisoformat(str(refvalue))
+    else:
+        now=datetime.now()
+        if ref=="today":
+            comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="tomorrow":
+            comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="yesterday":
+            comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        else:
+            comparedate=datetime.fromisoformat(ref)
+
+    inputdate=datetime.fromisoformat(str(value))
+    if inputdate<comparedate:
         return seterror(testkey,rulename)
 except:
     return seterror(testkey,rulename)
@@ -729,4 +825,4 @@ this note is write by chatgpt, maybe will have some mistake.
 
 ### References
 
-*20250709 v001000005*
+*20250712 v001000006*

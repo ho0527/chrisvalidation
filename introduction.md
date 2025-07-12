@@ -17,42 +17,46 @@
       - [實作方式](#實作方式-2)
     - [after(之後):*date*](#after之後date)
       - [實作方式](#實作方式-3)
-    - [array(陣列)](#array陣列)
+    - [after\_or\_equal(之後或相等):*date*](#after_or_equal之後或相等date)
       - [實作方式](#實作方式-4)
-    - [bail(停止)](#bail停止)
+    - [array(陣列)](#array陣列)
       - [實作方式](#實作方式-5)
-    - [before(之前):*date*](#before之前date)
+    - [bail(停止)](#bail停止)
       - [實作方式](#實作方式-6)
-    - [boolean|bool(布林值)](#booleanbool布林值)
+    - [before(之前):*date*](#before之前date)
       - [實作方式](#實作方式-7)
-    - [in(包含):*valuelist*](#in包含valuelist)
+    - [before\_or\_equal(之前或相等):*date*](#before_or_equal之前或相等date)
       - [實作方式](#實作方式-8)
-    - [integer|int(整數)](#integerint整數)
+    - [boolean|bool(布林值)](#booleanbool布林值)
       - [實作方式](#實作方式-9)
-    - [ip](#ip)
+    - [in(包含):*valuelist*](#in包含valuelist)
       - [實作方式](#實作方式-10)
-    - [ipv4](#ipv4)
+    - [integer|int(整數)](#integerint整數)
       - [實作方式](#實作方式-11)
-    - [ipv6](#ipv6)
+    - [ip](#ip)
       - [實作方式](#實作方式-12)
-    - [json](#json)
+    - [ipv4](#ipv4)
       - [實作方式](#實作方式-13)
-    - [max(小於):*value{int}*](#max小於valueint)
+    - [ipv6](#ipv6)
       - [實作方式](#實作方式-14)
-    - [min(大於):*value{int}*](#min大於valueint)
+    - [json](#json)
       - [實作方式](#實作方式-15)
-    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
+    - [max(小於):*value{int}*](#max小於valueint)
       - [實作方式](#實作方式-16)
-    - [nullable(可空)](#nullable可空)
+    - [min(大於):*value{int}*](#min大於valueint)
       - [實作方式](#實作方式-17)
-    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
+    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
       - [實作方式](#實作方式-18)
-    - [required(必填的)](#required必填的)
+    - [nullable(可空)](#nullable可空)
       - [實作方式](#實作方式-19)
-    - [size(大小):*value{int}*](#size大小valueint)
+    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
       - [實作方式](#實作方式-20)
-    - [string|str(字串)](#stringstr字串)
+    - [required(必填的)](#required必填的)
       - [實作方式](#實作方式-21)
+    - [size(大小):*value{int}*](#size大小valueint)
+      - [實作方式](#實作方式-22)
+    - [string|str(字串)](#stringstr字串)
+      - [實作方式](#實作方式-23)
   - [十二、註解及參見](#十二註解及參見)
     - [註解](#註解)
     - [參見](#參見)
@@ -151,9 +155,11 @@ def signin(request):
 [accepted_if(如果...接受)](#accepted_if如果接受filedvalue)
 [active_url(真實URL)](#active_url真實URL)
 [after(之後)](#after之後date)
+[after_or_equal(之後或相等)](#after之後或相等date)
 [array(陣列)](#array陣列)
 [bail(停止)](#bail停止)
 [before(之前)](#before之前date)
+[before_or_equal(之前或相等)](#before_or_equal之前或相等date)
 [boolean(布林值)](#booleanbool布林值)
 [max(小於)](#max小於value)
 [in(包含)](#in包含valuelist)
@@ -264,6 +270,49 @@ except:
 
 ---
 
+### after_or_equal(之後或相等):*date*
+
+驗證的欄位必須是給定日期之後或相等的值。日期將傳遞到fromisoformat函數中，以便轉換為有效DateTime實例：
+```json
+{"start_date": "required|date|after_or_equal:tomorrow"}
+```
+
+您無需傳遞要評估的日期字串strtotime，而是可以指定另一個欄位來與日期進行比較：
+```json
+{"finish_date": "required|date|after_or_equal:start_date"}
+```
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+try:
+    ref=rulevaluelist[0]
+    refvalue=data.get(ref)
+
+    if refvalue is not None:
+        comparedate=datetime.fromisoformat(str(refvalue))
+    else:
+        now=datetime.now()
+        if ref=="today":
+            comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="tomorrow":
+            comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="yesterday":
+            comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        else:
+            comparedate=datetime.fromisoformat(ref)
+
+    inputdate=datetime.fromisoformat(str(value))
+    if inputdate<comparedate:
+        return seterror(testkey,rulename)
+except:
+    return seterror(testkey,rulename)
+```
+
+---
+
 ### array(陣列)
 驗證下的欄位必須是array。也就是需符合List型別。
 
@@ -359,6 +408,49 @@ try:
 
     inputdate=datetime.fromisoformat(str(value))
     if comparedate<=inputdate:
+        return seterror(testkey,rulename)
+except:
+    return seterror(testkey,rulename)
+```
+
+---
+
+### before_or_equal(之前或相等):*date*
+
+驗證的欄位必須是給定日期之前或相等的值。日期將傳遞到fromisoformat函數中，以便轉換為有效DateTime實例：
+```json
+{"start_date": "required|date|before_or_equal:tomorrow"}
+```
+
+您無需傳遞要評估的日期字串strtotime，而是可以指定另一個欄位來與日期進行比較：
+```json
+{"finish_date": "required|date|before_or_equal:start_date"}
+```
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+try:
+    ref=rulevaluelist[0]
+    refvalue=data.get(ref)
+
+    if refvalue is not None:
+        comparedate=datetime.fromisoformat(str(refvalue))
+    else:
+        now=datetime.now()
+        if ref=="today":
+            comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="tomorrow":
+            comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        elif ref=="yesterday":
+            comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+        else:
+            comparedate=datetime.fromisoformat(ref)
+
+    inputdate=datetime.fromisoformat(str(value))
+    if comparedate<inputdate:
         return seterror(testkey,rulename)
 except:
     return seterror(testkey,rulename)
@@ -709,4 +801,4 @@ if not isinstance(value,str):
 
 ### 參見
 
-*20250709 v001000005*
+*20250712 v001000006*

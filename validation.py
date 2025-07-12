@@ -128,6 +128,31 @@ def validate(data,rule,error,checkall=False):
 						return seterror(testkey,rulename)
 				except:
 					return seterror(testkey,rulename)
+			elif rulename=="after_or_equal":
+				try:
+					ref=rulevaluelist[0]
+					# 嘗試用欄位方式抓比較值
+					refvalue=data.get(ref)
+
+					if refvalue is not None:
+						comparedate=datetime.fromisoformat(str(refvalue))
+					else:
+						# 無對應欄位時，視為 strtotime 類型（支援 today/tomorrow）
+						now=datetime.now()
+						if ref=="today":
+							comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+						elif ref=="tomorrow":
+							comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+						elif ref=="yesterday":
+							comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+						else:
+							comparedate=datetime.fromisoformat(ref)
+
+					inputdate=datetime.fromisoformat(str(value))
+					if inputdate<comparedate:
+						return seterror(testkey,rulename)
+				except:
+					return seterror(testkey,rulename)
 			elif rulename=="array":
 				if not isinstance(value,list):
 					return seterror(testkey,rulename)
@@ -154,6 +179,29 @@ def validate(data,rule,error,checkall=False):
 
 					inputdate=datetime.fromisoformat(str(value))
 					if comparedate<=inputdate:
+						return seterror(testkey,rulename)
+				except:
+					return seterror(testkey,rulename)
+			elif rulename=="before_or_equal":
+				try:
+					ref=rulevaluelist[0]
+					refvalue=data.get(ref)
+
+					if refvalue is not None:
+						comparedate=datetime.fromisoformat(str(refvalue))
+					else:
+						now=datetime.now()
+						if ref=="today":
+							comparedate=now.replace(hour=0,minute=0,second=0,microsecond=0)
+						elif ref=="tomorrow":
+							comparedate=(now+timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+						elif ref=="yesterday":
+							comparedate=(now-timedelta(days=1)).replace(hour=0,minute=0,second=0,microsecond=0)
+						else:
+							comparedate=datetime.fromisoformat(ref)
+
+					inputdate=datetime.fromisoformat(str(value))
+					if comparedate<inputdate:
 						return seterror(testkey,rulename)
 				except:
 					return seterror(testkey,rulename)
