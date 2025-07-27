@@ -165,7 +165,7 @@ Here is the list of all available validation rules:
 [boolean](#booleanbool)
 [max](#maxvalue)
 [in](#invaluelist)
-[interger](#integerint)
+[integer](#integerint)
 [ip](#ip)
 [ipv4](#ipv4)
 [ipv6](#ipv6)
@@ -518,14 +518,13 @@ The field must exist in the value(s) of another field.
 
 The field must be an integer.
 
-This rule does not verify variable type but instead follows PHP's `FILTER_VALIDATE_INT` logic.
 For numeric checks, combine with the `numeric` rule.
 
 #### Implementation
 
 code:
 ```python
-if not isinstance(value,int) and not isinstance(value,float):
+if not isinstance(value,int):
     return seterror(testkey,rulename)
 ```
 
@@ -825,4 +824,4 @@ this note is write by chatgpt, maybe will have some mistake.
 
 ### References
 
-*20250712 v001000006*
+*20250728 v001000007*

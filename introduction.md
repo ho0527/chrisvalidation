@@ -507,7 +507,7 @@ in_array:另一個字段.*
 
 程式碼:
 ```python
-if not isinstance(value,int) and not isinstance(value,float):
+if not isinstance(value,int):
     return seterror(testkey,rulename)
 ```
 
@@ -801,4 +801,4 @@ if not isinstance(value,str):
 
 ### 參見
 
-*20250712 v001000006*
+*20250728 v001000007*

@@ -218,7 +218,7 @@ def validate(data,rule,error,checkall=False):
 					if str(value) not in allowed:
 						return seterror(testkey,rulename)
 			elif rulename in ["integer","int"]:
-				if not isinstance(value,int) and not isinstance(value,float):
+				if not isinstance(value,int):
 					return seterror(testkey,rulename)
 			elif rulename=="ip":
 				try:
