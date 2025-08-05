@@ -31,10 +31,10 @@ def formdata_to_dict(formdata):
 
 def validate(data,rule,error,checkall=False):
 	# 先統一處理 formdata
-	if not isinstance(data, dict):
+	if not isinstance(data,dict):
 		try:
-			fromdata = formdata_to_dict(data)
-			data = fromdata
+			fromdata=formdata_to_dict(data)
+			data=fromdata
 		except:
 			pass
 
@@ -237,21 +237,8 @@ def validate(data,rule,error,checkall=False):
 				if type(value)!=str or not re.match(r"^[^@]+@[^@]+\.[^@]+$",value):
 					return seterror(testkey,rulename)
 			elif rulename=="file":
-				# 判斷是否為檔案物件
 				if not (hasattr(value,"read") or hasattr(value,"filename")):
 					return seterror(testkey,rulename)
-
-				# 類型檢查
-				if rulevalue:  # 例如 file:jpg,png
-					allowed_exts=[x.lower() for x in rulevaluelist]
-					filename=getattr(value,"filename",None)
-					if not filename:
-						# 嘗試從物件推測類型失敗，直接錯
-						return seterror(testkey,rulename)
-
-					ext=filename.rsplit(".",1)[-1].lower() if "." in filename else ""
-					if ext not in allowed_exts:
-						return seterror(testkey,rulename)
 			elif rulename=="in":
 				allowed=rulevaluelist
 				if isinstance(value,list):
@@ -290,6 +277,15 @@ def validate(data,rule,error,checkall=False):
 					if size==False or int(rulevaluelist[0])<size:
 						return seterror(testkey,rulename)
 				except:
+					return seterror(testkey,rulename)
+			elif rulename=="mimes":
+				# 取得允許的副檔名
+				allowed_exts=[x.lower() for x in rulevaluelist]
+				filename=getattr(value,"filename",None)
+				if not filename or "." not in filename:
+					return seterror(testkey,rulename)
+				ext=filename.rsplit(".",1)[-1].lower()
+				if ext not in allowed_exts:
 					return seterror(testkey,rulename)
 			elif rulename=="min":
 				try:

@@ -883,10 +883,11 @@ class TestValidation(unittest.TestCase):
 
 	def test057filesuccess(self):
 		class DummyFile:
+			filename = "test.png"
 			def read(self):
-				return b"filecontent"
+				return b"data"
 		data = {"upload": DummyFile()}
-		rule = {"upload": "required|file"}
+		rule = {"upload": "required|file|mimes:jpg,png"}
 		error = {"file": "The :key must be a file."}
 		result = validate(data, rule, error)
 		self.assertTrue(result["success"])
@@ -894,14 +895,18 @@ class TestValidation(unittest.TestCase):
 		self.assertIsNone(result["error"])
 
 	def test058fileerror(self):
-		data = {"upload": "notafile"}
-		rule = {"upload": "required|file"}
-		error = {"file": "The :key must be a file."}
+		class DummyFile:
+			filename = "test.jpg"
+			def read(self):
+				return b"data"
+		data = {"upload": DummyFile()}
+		rule = {"upload": "required|file|mimes:png"}
+		error = {"file": "The :key must be a file.","mimes": "The :key must be a file of type: png."}
 		result = validate(data, rule, error)
 		self.assertFalse(result["success"])
 		self.assertEqual(result["data"], {
-			"upload": {"file": "The 'upload' must be a file."}
+			"upload": {"mimes": "The 'upload' must be a file of type: png."}
 		})
-		self.assertEqual(result["error"], "The 'upload' must be a file.")
+		self.assertEqual(result["error"], "The 'upload' must be a file of type: png.")
 if __name__=="__main__":
 	unittest.main()
