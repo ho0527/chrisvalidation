@@ -2,6 +2,7 @@ import ipaddress
 import re
 import socket
 from datetime import datetime,timedelta
+from collections.abc import Mapping
 
 customrules={}  # 自訂驗證規則儲存區
 null=[None,"",[],{}]
@@ -9,7 +10,34 @@ null=[None,"",[],{}]
 def registerrule(name,func):
 	customrules[name]=func  # 註冊自訂驗證規則
 
+def formdata_to_dict(formdata):
+	"""
+	將常見的 formdata 物件（如 MultiDict、ImmutableMultiDict、Django QueryDict 等）轉為普通 dict。
+	若已是 dict 則直接回傳。
+	"""
+	# 若已是 dict
+	if isinstance(formdata,dict):
+		return formdata
+	# Werkzeug MultiDict,Django QueryDict 等
+	if hasattr(formdata,"to_dict"):  # Werkzeug
+		return formdata.to_dict(flat=True)
+	if hasattr(formdata,"dict"):  # Starlette/FastAPI
+		return formdata.dict()
+	# 其他 Mapping 類型
+	if isinstance(formdata,Mapping):
+		return dict(formdata)
+	# 其他未知型態
+	raise TypeError("Unsupported formdata type: {}".format(type(formdata)))
+
 def validate(data,rule,error,checkall=False):
+	# 先統一處理 formdata
+	if not isinstance(data, dict):
+		try:
+			fromdata = formdata_to_dict(data)
+			data = fromdata
+		except:
+			pass
+
 	check=True  # 整體驗證結果
 	errordata={}  # 所有錯誤訊息
 	firsterror=None  # 第一個錯誤訊息（給 error 欄位用）
@@ -208,6 +236,22 @@ def validate(data,rule,error,checkall=False):
 			elif rulename=="email":
 				if type(value)!=str or not re.match(r"^[^@]+@[^@]+\.[^@]+$",value):
 					return seterror(testkey,rulename)
+			elif rulename=="file":
+				# 判斷是否為檔案物件
+				if not (hasattr(value,"read") or hasattr(value,"filename")):
+					return seterror(testkey,rulename)
+
+				# 類型檢查
+				if rulevalue:  # 例如 file:jpg,png
+					allowed_exts=[x.lower() for x in rulevaluelist]
+					filename=getattr(value,"filename",None)
+					if not filename:
+						# 嘗試從物件推測類型失敗，直接錯
+						return seterror(testkey,rulename)
+
+					ext=filename.rsplit(".",1)[-1].lower() if "." in filename else ""
+					if ext not in allowed_exts:
+						return seterror(testkey,rulename)
 			elif rulename=="in":
 				allowed=rulevaluelist
 				if isinstance(value,list):
@@ -227,13 +271,13 @@ def validate(data,rule,error,checkall=False):
 					return seterror(testkey,rulename)
 			elif rulename=="ipv4":
 				try:
-					if not isinstance(ipaddress.ip_address(value), ipaddress.IPv4Address):
+					if not isinstance(ipaddress.ip_address(value),ipaddress.IPv4Address):
 						return seterror(testkey,rulename)
 				except:
 					return seterror(testkey,rulename)
 			elif rulename=="ipv6":
 				try:
-					if not isinstance(ipaddress.ip_address(value), ipaddress.IPv6Address):
+					if not isinstance(ipaddress.ip_address(value),ipaddress.IPv6Address):
 						return seterror(testkey,rulename)
 				except:
 					return seterror(testkey,rulename)
@@ -317,7 +361,7 @@ def validate(data,rule,error,checkall=False):
 				size=checksize(value)
 				if size==False or size!=int(rulevaluelist[0]):
 					return seterror(testkey,rulename)
-			elif rulename in ["bail","required", "nullable"]:
+			elif rulename in ["bail","required","nullable"]:
 				pass  # 已經處理過
 			elif rulename in customrules:
 				if not customrules[rulename](value,rulevaluelist):

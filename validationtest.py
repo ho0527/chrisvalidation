@@ -1,5 +1,6 @@
 import unittest
 from validation import *
+from collections import UserDict
 
 class TestValidation(unittest.TestCase):
 	def test001validdata(self):
@@ -841,5 +842,66 @@ class TestValidation(unittest.TestCase):
 			}
 		})
 
+	def test055formdata_dict(self):
+		# 模擬一般 dict 型態的 formdata
+		formdata = {"username": "formuser", "password": "formpass"}
+		result = validate(formdata, {
+			"username": "required|string",
+			"password": ["required", "string", "min:5"]
+		}, {
+			"required": "The :key field is required.",
+			"string": "ERROR_datatype_error",
+			"min": "ERROR_datatype_error"
+		})
+		self.assertTrue(result["success"])
+		self.assertEqual(result["data"], {
+			"username": "formuser",
+			"password": "formpass"
+		})
+		self.assertIsNone(result["error"])
+
+	def test056formdata_userdict(self):
+		# 模擬類似 werkzeug/Starlette 的 formdata 物件
+		class MyFormData(UserDict):
+			def to_dict(self, flat=True):
+				return dict(self.data)
+		formdata = MyFormData({"username": "fduser", "password": "fdpass123"})
+		result = validate(formdata, {
+			"username": "required|string",
+			"password": ["required", "string", "min:5"]
+		}, {
+			"required": "The :key field is required.",
+			"string": "ERROR_datatype_error",
+			"min": "ERROR_datatype_error"
+		})
+		self.assertTrue(result["success"])
+		self.assertEqual(result["data"], {
+			"username": "fduser",
+			"password": "fdpass123"
+		})
+		self.assertIsNone(result["error"])
+
+	def test057filesuccess(self):
+		class DummyFile:
+			def read(self):
+				return b"filecontent"
+		data = {"upload": DummyFile()}
+		rule = {"upload": "required|file"}
+		error = {"file": "The :key must be a file."}
+		result = validate(data, rule, error)
+		self.assertTrue(result["success"])
+		self.assertEqual(result["data"], data)
+		self.assertIsNone(result["error"])
+
+	def test058fileerror(self):
+		data = {"upload": "notafile"}
+		rule = {"upload": "required|file"}
+		error = {"file": "The :key must be a file."}
+		result = validate(data, rule, error)
+		self.assertFalse(result["success"])
+		self.assertEqual(result["data"], {
+			"upload": {"file": "The 'upload' must be a file."}
+		})
+		self.assertEqual(result["error"], "The 'upload' must be a file.")
 if __name__=="__main__":
 	unittest.main()
