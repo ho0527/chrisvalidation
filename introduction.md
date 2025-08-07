@@ -29,34 +29,38 @@
       - [實作方式](#實作方式-8)
     - [boolean|bool(布林值)](#booleanbool布林值)
       - [實作方式](#實作方式-9)
-    - [in(包含):*valuelist*](#in包含valuelist)
+    - [file(檔案)](#file檔案)
       - [實作方式](#實作方式-10)
-    - [integer|int(整數)](#integerint整數)
+    - [in(包含):*valuelist*](#in包含valuelist)
       - [實作方式](#實作方式-11)
-    - [ip](#ip)
+    - [integer|int(整數)](#integerint整數)
       - [實作方式](#實作方式-12)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [實作方式](#實作方式-13)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [實作方式](#實作方式-14)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [實作方式](#實作方式-15)
-    - [max(小於):*value{int}*](#max小於valueint)
+    - [json](#json)
       - [實作方式](#實作方式-16)
-    - [min(大於):*value{int}*](#min大於valueint)
+    - [max(小於):*value{int}*](#max小於valueint)
       - [實作方式](#實作方式-17)
-    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
+    - [mimes(檔案類型):*mimestype{string}*](#mimes檔案類型mimestypestring)
       - [實作方式](#實作方式-18)
-    - [nullable(可空)](#nullable可空)
+    - [min(大於):*value{int}*](#min大於valueint)
       - [實作方式](#實作方式-19)
-    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
+    - [not\_regex(非正規表達式):*value{regex}*](#not_regex非正規表達式valueregex)
       - [實作方式](#實作方式-20)
-    - [required(必填的)](#required必填的)
+    - [nullable(可空)](#nullable可空)
       - [實作方式](#實作方式-21)
-    - [size(大小):*value{int}*](#size大小valueint)
+    - [regex(正規表達式):*value{regex}*](#regex正規表達式valueregex)
       - [實作方式](#實作方式-22)
-    - [string|str(字串)](#stringstr字串)
+    - [required(必填的)](#required必填的)
       - [實作方式](#實作方式-23)
+    - [size(大小):*value{int}*](#size大小valueint)
+      - [實作方式](#實作方式-24)
+    - [string|str(字串)](#stringstr字串)
+      - [實作方式](#實作方式-25)
   - [十二、註解及參見](#十二註解及參見)
     - [註解](#註解)
     - [參見](#參見)
@@ -108,6 +112,7 @@ from function.validation import * # 函式引入在這!
 
 @api_view(["POST"])
 def signin(request):
+    # 可以用json.loads(request.body)或直接用request
 	data=validate(json.loads(request.body),{
 		"username": "required|string",
 		"password": "required|string"
@@ -161,13 +166,15 @@ def signin(request):
 [before(之前)](#before之前date)
 [before_or_equal(之前或相等)](#before_or_equal之前或相等date)
 [boolean(布林值)](#booleanbool布林值)
-[max(小於)](#max小於value)
+[file(檔案)](#file檔案)
 [in(包含)](#in包含valuelist)
 [interger(整數)](#integerint整數)
 [ip](#ip)
 [ipv4](#ipv4)
 [ipv6](#ipv6)
 [JSON](#json)
+[max(小於)](#max小於value)
+[mimes(檔案類型)](#mimes檔案類型mimestypestring)
 [min(大於)](#min大於value)
 [not_regex(正規表達式)](#regex正規表達式valueregex)
 [nullable(可空)](#nullable可空)
@@ -472,6 +479,20 @@ if not isinstance(value,bool) and value not in [0,1,"0","1"]:
 
 ---
 
+### file(檔案)
+驗證下的欄位必須是成功上傳的檔案。
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+if not (hasattr(value,"read") or hasattr(value,"filename")):
+    return seterror(testkey,rulename)
+```
+
+---
+
 ### in(包含):*valuelist*
 驗證字串是否包含在給定的值清單中(以逗號分隔)。
 
@@ -491,9 +512,6 @@ else:
     if str(value) not in allowed:
         return seterror(testkey,rulename)
 ```
-
-in_array:另一個字段.*
-驗證下的欄位必須存在於anotherfield的值中。
 
 ---
 
@@ -587,6 +605,34 @@ try:
     if size==False or int(rulevalue)<size:
         return seterror(testkey,rulename)
 except:
+    return seterror(testkey,rulename)
+```
+
+---
+
+### mimes(檔案類型):*mimestype{string}*
+
+驗證的檔案必須具有與列出的副檔名之一相對應的 MIME 類型：
+
+```python
+{ "photo": "mimes:jpg,bmp,png" }
+```
+
+即使您只需要指定副檔名，此規則實際上也會透過讀取檔案的內容並猜測其 MIME 類型來驗證檔案的 MIME 類型。可以在以下位置找到 MIME 類型及其相應擴充功能的完整清單：
+
+[https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types](https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types)
+
+#### 實作方式
+依照給定規則判斷。
+
+程式碼:
+```python
+allowedexts=[x.lower() for x in rulevaluelist]
+filename=getattr(value,"filename",None)
+if not filename or "." not in filename:
+    return seterror(testkey,rulename)
+ext=filename.rsplit(".",1)[-1].lower()
+if ext not in allowedexts:
     return seterror(testkey,rulename)
 ```
 
@@ -801,4 +847,4 @@ if not isinstance(value,str):
 
 ### 參見
 
-*20250728 v001000007*
+*20250807 v001000008*

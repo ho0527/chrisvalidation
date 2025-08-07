@@ -12,22 +12,29 @@ def registerrule(name,func):
 
 def formdata_to_dict(formdata):
 	"""
-	將常見的 formdata 物件（如 MultiDict、ImmutableMultiDict、Django QueryDict 等）轉為普通 dict。
-	若已是 dict 則直接回傳。
+	自動將 formdata 物件（dict、QueryDict、MultiDict、Starlette FormData）轉 dict
+	並自動合併 request.FILES
 	"""
-	# 若已是 dict
+	# 已是 dict
 	if isinstance(formdata,dict):
-		return formdata
-	# Werkzeug MultiDict,Django QueryDict 等
-	if hasattr(formdata,"to_dict"):  # Werkzeug
-		return formdata.to_dict(flat=True)
-	if hasattr(formdata,"dict"):  # Starlette/FastAPI
-		return formdata.dict()
-	# 其他 Mapping 類型
-	if isinstance(formdata,Mapping):
-		return dict(formdata)
-	# 其他未知型態
-	raise TypeError("Unsupported formdata type: {}".format(type(formdata)))
+		data=dict(formdata)
+	elif hasattr(formdata,"to_dict"):  # Werkzeug MultiDict
+		data=formdata.to_dict(flat=True)
+	elif hasattr(formdata,"dict"):  # Starlette FormData
+		data=formdata.dict()
+	elif isinstance(formdata,Mapping):
+		data=dict(formdata)
+	else:
+		raise TypeError(f"Unsupported formdata type: {type(formdata)}")
+
+	# 自動合併 FILES
+	if hasattr(formdata,"FILES"):
+		try:
+			data.update(formdata.FILES)
+		except:
+			pass
+
+	return data
 
 def validate(data,rule,error,checkall=False):
 	# 先統一處理 formdata
@@ -280,12 +287,12 @@ def validate(data,rule,error,checkall=False):
 					return seterror(testkey,rulename)
 			elif rulename=="mimes":
 				# 取得允許的副檔名
-				allowed_exts=[x.lower() for x in rulevaluelist]
+				allowedexts=[x.lower() for x in rulevaluelist]
 				filename=getattr(value,"filename",None)
 				if not filename or "." not in filename:
 					return seterror(testkey,rulename)
 				ext=filename.rsplit(".",1)[-1].lower()
-				if ext not in allowed_exts:
+				if ext not in allowedexts:
 					return seterror(testkey,rulename)
 			elif rulename=="min":
 				try:

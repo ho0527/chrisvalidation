@@ -29,36 +29,40 @@
       - [Implementation](#implementation-8)
     - [boolean|bool](#booleanbool)
       - [Implementation](#implementation-9)
-    - [in:*valuelist*](#invaluelist)
+    - [file](#file)
       - [Implementation](#implementation-10)
+    - [in:*valuelist*](#invaluelist)
+      - [Implementation](#implementation-11)
     - [in\_array:anotherfield.\*](#in_arrayanotherfield)
     - [integer|int](#integerint)
-      - [Implementation](#implementation-11)
-    - [ip](#ip)
       - [Implementation](#implementation-12)
-    - [ipv4](#ipv4)
+    - [ip](#ip)
       - [Implementation](#implementation-13)
-    - [ipv6](#ipv6)
+    - [ipv4](#ipv4)
       - [Implementation](#implementation-14)
-    - [json](#json)
+    - [ipv6](#ipv6)
       - [Implementation](#implementation-15)
-    - [max:*value{int}*](#maxvalueint)
+    - [json](#json)
       - [Implementation](#implementation-16)
-    - [min:*value{int}*](#minvalueint)
+    - [max:*value{int}*](#maxvalueint)
       - [Implementation](#implementation-17)
-    - [not\_regex:*value{regex}*](#not_regexvalueregex)
+    - [mimes:*mimestype{string}*](#mimesmimestypestring)
       - [Implementation](#implementation-18)
-    - [nullable](#nullable)
+    - [min:*value{int}*](#minvalueint)
       - [Implementation](#implementation-19)
-    - [regex:*value{regex}*](#regexvalueregex)
+    - [not\_regex:*value{regex}*](#not_regexvalueregex)
       - [Implementation](#implementation-20)
-    - [required](#required)
+    - [nullable](#nullable)
       - [Implementation](#implementation-21)
-    - [size:*value{int}*](#sizevalueint)
+    - [regex:*value{regex}*](#regexvalueregex)
       - [Implementation](#implementation-22)
+    - [required](#required)
+      - [Implementation](#implementation-23)
+    - [size:*value{int}*](#sizevalueint)
+      - [Implementation](#implementation-24)
     - [starts\_with:foo,bar,...](#starts_withfoobar)
     - [string|str](#stringstr)
-      - [Implementation](#implementation-23)
+      - [Implementation](#implementation-25)
   - [12. Notes and References](#12-notes-and-references)
     - [Notes](#notes)
     - [References](#references)
@@ -163,13 +167,15 @@ Here is the list of all available validation rules:
 [before](#beforedate)
 [before_or_equal](#before_or_equaldate)
 [boolean](#booleanbool)
-[max](#maxvalue)
+[file](#filebool)
 [in](#invaluelist)
 [integer](#integerint)
 [ip](#ip)
 [ipv4](#ipv4)
 [ipv6](#ipv6)
 [JSON](#json)
+[max](#maxvalue)
+[mimes](#mimesmimestypestring)
 [min](#minvalue)
 [not_regex](#regexvalueregex)
 [nullable](#nullable)
@@ -486,6 +492,21 @@ if not isinstance(value,bool) and value not in [0,1,"0","1"]:
 
 ---
 
+### file
+
+The field under validation must be a successfully uploaded file.
+
+#### Implementation
+Check according to the given rule.
+
+code:
+```python
+if not (hasattr(value,"read") or hasattr(value,"filename")):
+    return seterror(testkey,rulename)
+```
+
+---
+
 ### in:*valuelist*
 
 The field must be included in the given list (comma-separated).
@@ -608,6 +629,30 @@ try:
     if size==False or int(rulevalue)<size:
         return seterror(testkey,rulename)
 except:
+    return seterror(testkey,rulename)
+```
+
+---
+
+### mimes:*mimestype{string}*
+The file under validation must have a MIME type corresponding to one of the listed extensions:
+```python
+{ "photo": "mimes:jpg,bmp,png" }
+```
+Even though you only need to specify the extensions, this rule actually validates the MIME type of the file by reading the file's contents and guessing its MIME type. A full listing of MIME types and their corresponding extensions may be found at the following location:
+
+[https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types](https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types)
+
+#### Implementation
+
+code:
+```python
+allowedexts=[x.lower() for x in rulevaluelist]
+filename=getattr(value,"filename",None)
+if not filename or "." not in filename:
+    return seterror(testkey,rulename)
+ext=filename.rsplit(".",1)[-1].lower()
+if ext not in allowedexts:
     return seterror(testkey,rulename)
 ```
 
@@ -824,4 +869,4 @@ this note is write by chatgpt, maybe will have some mistake.
 
 ### References
 
-*20250728 v001000007*
+*20250807 v001000008*
